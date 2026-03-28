@@ -13,7 +13,7 @@ let bridgeReady = false; // Whether bridge has initialized
 // Paths — works both in dev and packaged
 function getResourcePath(filename) {
   if (app.isPackaged) {
-    return path.join(process.resourcesPath, filename);
+    return path.join(process.resourcesPath, 'app', filename);
   }
   return path.join(__dirname, filename);
 }
@@ -33,7 +33,7 @@ let responseCallbacks = {};  // action -> [resolve, ...]
 
 function startBridge() {
   const bridgeExe = getResourcePath('ApexBridge.exe');
-  const bridgeDir = app.isPackaged ? process.resourcesPath : __dirname;
+  const bridgeDir = app.isPackaged ? path.join(process.resourcesPath, 'app') : __dirname;
 
   console.log('[Bridge] === STARTING BRIDGE ===' );
   console.log('[Bridge] bridgeExe:', bridgeExe);
@@ -289,7 +289,7 @@ async function bootSequence() {
       await delay(600);
 
       const filesToSync = remote.files || SYNC_FILES;
-      const appDir = app.isPackaged ? process.resourcesPath : __dirname;
+      const appDir = app.isPackaged ? path.join(process.resourcesPath, 'app') : __dirname;
 
       for (let i = 0; i < filesToSync.length; i++) {
         const file = filesToSync[i];
@@ -617,7 +617,7 @@ ipcMain.handle('check-for-update', async () => {
 
 // Download all changed files from GitHub and overwrite local copies
 ipcMain.handle('sync-update', async (_ev, files, remoteVersion, changelog) => {
-  const appDir = app.isPackaged ? process.resourcesPath : __dirname;
+  const appDir = app.isPackaged ? path.join(process.resourcesPath, 'app') : __dirname;
   let updated = 0;
   let errors = [];
 
