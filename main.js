@@ -1,4 +1,7 @@
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const electron = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = electron;
+console.log('[DEBUG] electron typeof:', typeof electron, 'app typeof:', typeof app);
+console.log('[DEBUG] process.versions:', process.versions);
 const path = require('path');
 const { spawn, exec } = require('child_process');
 const fs = require('fs');
@@ -18,9 +21,10 @@ function getResourcePath(filename) {
   return path.join(__dirname, filename);
 }
 
-const SAVED_SCRIPTS_DIR = path.join(app.getPath('userData'), 'saved_scripts');
+let SAVED_SCRIPTS_DIR;
 
 function ensureSavedDir() {
+  if (!SAVED_SCRIPTS_DIR) SAVED_SCRIPTS_DIR = path.join(app.getPath('userData'), 'saved_scripts');
   if (!fs.existsSync(SAVED_SCRIPTS_DIR)) fs.mkdirSync(SAVED_SCRIPTS_DIR, { recursive: true });
 }
 
@@ -31,23 +35,19 @@ function ensureSavedDir() {
 let pendingCallbacks = [];
 
 function startBridge() {
-  const bridgeScript = getResourcePath('apex_bridge.ps1');
+  const bridgeScript = getResourcePath('ApexBridge.exe');
   if (!fs.existsSync(bridgeScript)) {
-    console.error('[Bridge] apex_bridge.ps1 not found at', bridgeScript);
+    console.error('[Bridge] ApexBridge.exe not found at', bridgeScript);
     return;
   }
 
   const dllPath = getResourcePath('QuorumAPI.dll');
   if (!fs.existsSync(dllPath)) {
     console.error('[Bridge] QuorumAPI.dll not found at', dllPath);
-    return;
+    // Continue anyway as ApexBridge might have it built-in or adjacent.
   }
 
-  bridge = spawn('powershell.exe', [
-    '-ExecutionPolicy', 'Bypass',
-    '-NoProfile',
-    '-File', bridgeScript
-  ], {
+  bridge = spawn(bridgeScript, [], {
     cwd: path.dirname(bridgeScript),
     stdio: ['pipe', 'pipe', 'pipe'],
     windowsHide: true
@@ -121,8 +121,88 @@ function sendBridgeCommand(cmd) {
   });
 }
 
+// ══ GITHUB REPO SYNC — CONFIG & UTILS ════════════════════════════════════
+const GITHUB_REPO = 'Michaeljackson1234567/apex-executor';
+const GITHUB_BRANCH = 'Guesspapers-AI';
+const GITHUB_RAW = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}`;
+
+let LOCAL_VERSION_FILE;
+let CHANGELOG_FILE;
+
+function ensurePaths() {
+  if (!LOCAL_VERSION_FILE) LOCAL_VERSION_FILE = path.join(app.getPath('userData'), 'apex_version.json');
+  if (!CHANGELOG_FILE) CHANGELOG_FILE = path.join(app.getPath('userData'), 'apex_changelog.json');
+}
+
+const SYNC_FILES = [
+  'renderer.js', 'style.css', 'index.html',
+  'preload.js', 'version.json',
+  'bootstrapper.html', 'preload_boot.js',
+  'ApexBridge.exe', 'ApexBridge.dll', 'ApexBridge.deps.json', 'ApexBridge.runtimeconfig.json'
+];
+
+function getLocalVersion() {
+  ensurePaths();
+  try {
+    if (fs.existsSync(LOCAL_VERSION_FILE)) {
+      return JSON.parse(fs.readFileSync(LOCAL_VERSION_FILE, 'utf8'));
+    }
+  } catch (e) {}
+  return { version: '1.0.0' };
+}
+
+function saveLocalVersion(data) {
+  ensurePaths();
+  fs.writeFileSync(LOCAL_VERSION_FILE, JSON.stringify(data, null, 2), 'utf8');
+}
+
+function fetchFile(url) {
+  return new Promise((resolve, reject) => {
+    const lib = url.startsWith('https') ? https : http;
+    lib.get(url, { headers: { 'User-Agent': 'ApexExecutor/1.0' } }, (res) => {
+      if (res.statusCode === 302 || res.statusCode === 301) {
+        lib.get(res.headers.location, { headers: { 'User-Agent': 'ApexExecutor/1.0' } }, (res2) => {
+          let data = '';
+          res2.on('data', c => data += c);
+          res2.on('end', () => resolve(data));
+        }).on('error', reject);
+        return;
+      }
+      if (res.statusCode !== 200) { reject(new Error(`HTTP ${res.statusCode}`)); return; }
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => resolve(data));
+    }).on('error', reject);
+  });
+}
+
 // ── Window ───────────────────────────────────────────────────────────────
-function createWindow() {
+let bootWindow = null;
+
+function createBootWindow() {
+  bootWindow = new BrowserWindow({
+    width: 420,
+    height: 520,
+    frame: false,
+    resizable: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload_boot.js')
+    },
+    title: 'Apex Executor',
+    center: true,
+    show: false
+  });
+
+  bootWindow.loadFile('bootstrapper.html');
+  bootWindow.setMenuBarVisibility(false);
+  bootWindow.once('ready-to-show', () => bootWindow.show());
+}
+
+function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 780,
@@ -135,18 +215,111 @@ function createWindow() {
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js')
     },
-    title: 'Apex Executor'
+    title: 'Apex Executor',
+    show: false
   });
 
   mainWindow.loadFile('index.html');
   mainWindow.setMenuBarVisibility(false);
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+    if (bootWindow && !bootWindow.isDestroyed()) {
+      bootWindow.close();
+      bootWindow = null;
+    }
+  });
+}
+
+function bootSend(text, type, progress) {
+  if (bootWindow && !bootWindow.isDestroyed()) {
+    bootWindow.webContents.send('boot-status', { text, type: type || '', progress });
+  }
+}
+
+function bootVersion(ver) {
+  if (bootWindow && !bootWindow.isDestroyed()) {
+    bootWindow.webContents.send('boot-version', ver);
+  }
+}
+
+async function bootSequence() {
+  ensurePaths();
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+
+  bootSend('Initializing Apex Executor...');
+  await delay(800);
+
+  // Show version
+  const localVer = getLocalVersion();
+  bootVersion(localVer.version);
+
+  // Check for updates
+  bootSend('Checking for updates...');
+  await delay(500);
+
+  try {
+    const remoteVersionStr = await fetchFile(`${GITHUB_RAW}/version.json`);
+    const remote = JSON.parse(remoteVersionStr);
+    const hasUpdate = remote.version && remote.version !== localVer.version;
+
+    if (hasUpdate) {
+      bootSend(`Update found: v${localVer.version} → v${remote.version}`);
+      await delay(600);
+
+      const filesToSync = remote.files || SYNC_FILES;
+      const appDir = app.isPackaged ? process.resourcesPath : __dirname;
+
+      for (let i = 0; i < filesToSync.length; i++) {
+        const file = filesToSync[i];
+        bootSend(`Downloading ${file}...`, '', Math.round(((i) / filesToSync.length) * 100));
+        try {
+          const content = await fetchFile(`${GITHUB_RAW}/${file}`);
+          const destPath = path.join(appDir, file);
+          const dir = path.dirname(destPath);
+          if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+          fs.writeFileSync(destPath, content, 'utf8');
+        } catch (e) {
+          console.error(`[Update] Failed to sync ${file}:`, e.message);
+        }
+      }
+
+      bootSend('Update complete!', 'ok', 100);
+      saveLocalVersion({ version: remote.version, updatedAt: new Date().toISOString() });
+
+      // Save changelog
+      try {
+        const clPath = path.join(app.getPath('userData'), 'apex_changelog.json');
+        fs.writeFileSync(clPath, JSON.stringify({ version: remote.version, changelog: remote.changelog || [], shown: false }, null, 2), 'utf8');
+      } catch (e) {}
+
+      bootVersion(remote.version);
+      await delay(1000);
+    } else {
+      bootSend('Up to date ✓', 'ok', 100);
+      await delay(600);
+    }
+  } catch (e) {
+    bootSend('Offline mode', '', 100);
+    await delay(600);
+  }
+
+  // Start bridge
+  bootSend('Starting QuorumAPI bridge...');
+  startBridge();
+  await delay(1200);
+
+  bootSend('Launching Apex Executor...', 'ok', 100);
+  await delay(500);
+
+  // Open main window
+  createMainWindow();
 }
 
 app.whenReady().then(() => {
   ensureSavedDir();
-  createWindow();
-  // Start the QuorumAPI bridge on launch
-  startBridge();
+  createBootWindow();
+  // Start boot sequence after a short delay to let the window render
+  setTimeout(() => bootSequence(), 300);
 });
 
 app.on('window-all-closed', () => {
@@ -383,68 +556,7 @@ ipcMain.handle('get-roblox-user', async () => {
   }
 });
 
-// ══ GITHUB REPO SYNC — AUTO-UPDATE SYSTEM ═══════════════════════════════
-// HOW IT WORKS:
-// 1. Push your app files to a GitHub repo
-// 2. Update version.json in the repo with new version + changelog
-// 3. All users auto-update on next launch
-//
-// SETUP: Change GITHUB_REPO below to your GitHub username/repo
-
-const GITHUB_REPO = 'YOUR_USERNAME/apex-executor'; // ← CHANGE THIS
-const GITHUB_BRANCH = 'main';
-const GITHUB_RAW = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}`;
-
-const LOCAL_VERSION_FILE = path.join(app.getPath('userData'), 'apex_version.json');
-const CHANGELOG_FILE = path.join(app.getPath('userData'), 'apex_changelog.json');
-
-// Files that get synced from GitHub
-const SYNC_FILES = [
-  'main.js',
-  'renderer.js',
-  'style.css',
-  'index.html',
-  'preload.js',
-  'apex_bridge.ps1',
-  'version.json'
-];
-
-function getLocalVersion() {
-  try {
-    if (fs.existsSync(LOCAL_VERSION_FILE)) {
-      return JSON.parse(fs.readFileSync(LOCAL_VERSION_FILE, 'utf8'));
-    }
-  } catch (e) {}
-  return { version: '1.0.0' };
-}
-
-function saveLocalVersion(data) {
-  fs.writeFileSync(LOCAL_VERSION_FILE, JSON.stringify(data, null, 2), 'utf8');
-}
-
-function fetchFile(url) {
-  return new Promise((resolve, reject) => {
-    const lib = url.startsWith('https') ? https : http;
-    lib.get(url, { headers: { 'User-Agent': 'ApexExecutor/1.0' } }, (res) => {
-      if (res.statusCode === 302 || res.statusCode === 301) {
-        lib.get(res.headers.location, { headers: { 'User-Agent': 'ApexExecutor/1.0' } }, (res2) => {
-          let data = '';
-          res2.on('data', c => data += c);
-          res2.on('end', () => resolve(data));
-        }).on('error', reject);
-        return;
-      }
-      if (res.statusCode !== 200) {
-        reject(new Error(`HTTP ${res.statusCode}`));
-        return;
-      }
-      let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => resolve(data));
-    }).on('error', reject);
-  });
-}
-
+// ── GITHUB SYNC — IPC HANDLERS ──────────────────────────────────────────
 // Check for update by comparing remote version.json with local
 ipcMain.handle('check-for-update', async () => {
   try {
