@@ -1,7 +1,4 @@
-const electron = require('electron');
-const { app, BrowserWindow, ipcMain, shell } = electron;
-console.log('[DEBUG] electron typeof:', typeof electron, 'app typeof:', typeof app);
-console.log('[DEBUG] process.versions:', process.versions);
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const { spawn, exec } = require('child_process');
 const fs = require('fs');
