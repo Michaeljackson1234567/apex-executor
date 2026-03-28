@@ -1,5 +1,5 @@
 {
-  "version": "1.3.2",
+  "version": "1.3.3",
   "changelog": [
     "Fixed Execution pipeline via background IPC.",
     "Brought back critical communication threads for executing scripts."
