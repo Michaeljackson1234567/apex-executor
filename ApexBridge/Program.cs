@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 using QuorumAPI;
 
 namespace QuorumBridge
@@ -10,11 +11,26 @@ namespace QuorumBridge
     {
         static QuorumModule quorum;
 
+        static void Log(string message)
+        {
+            try { File.AppendAllText("ApexLog.txt", $"[{DateTime.Now:HH:mm:ss}] {message}\n"); } catch { }
+        }
+
         static async Task Main(string[] args)
         {
-            quorum = new QuorumModule();
-            QuorumAPI.QuorumModule._AutoUpdateLogs = false;
-            quorum.StartCommunication();
+            Log("Bridge started.");
+            try
+            {
+                Log("Initializing QuorumModule.");
+                quorum = new QuorumModule();
+                QuorumAPI.QuorumModule._AutoUpdateLogs = false;
+                Log("Starting communication.");
+                quorum.StartCommunication();
+            }
+            catch (Exception ex)
+            {
+                Log("INIT ERROR: " + ex.Message);
+            }
 
             string line;
             while ((line = Console.ReadLine()) != null)
@@ -23,90 +39,65 @@ namespace QuorumBridge
 
                 try
                 {
-                    string action = ExtractValue(line, "action");
-                    await HandleAction(action, line);
+                    JObject obj = JObject.Parse(line);
+                    string action = obj["action"]?.ToString();
+                    await HandleAction(action, obj);
                 }
                 catch (Exception ex)
                 {
+                    Log("LOOP ERROR: " + ex.Message);
                     Send(false, "error", null, ex.Message);
                 }
             }
 
-            quorum.StopCommunication();
+            Log("Bridge exiting.");
+            quorum?.StopCommunication();
         }
 
-        static string ExtractValue(string json, string key)
-        {
-            try
-            {
-                string search = "\"" + key + "\":\"";
-                int start = json.IndexOf(search);
-                if (start == -1) return "";
-                start += search.Length;
-                int end = json.IndexOf("\"", start);
-                if (end == -1) return "";
-                return json.Substring(start, end - start);
-            }
-            catch { return ""; }
-        }
-
-        static string ExtractScript(string json)
-        {
-            try
-            {
-                string search = "\"script\":\"";
-                int start = json.IndexOf(search);
-                if (start == -1) return "";
-                start += search.Length;
-
-                int end = start;
-                while (end < json.Length)
-                {
-                    if (json[end] == '\\') { end += 2; continue; }
-                    if (json[end] == '"') break;
-                    end++;
-                }
-
-                string raw = json.Substring(start, end - start);
-                raw = raw.Replace("\\\\", "\0");
-                raw = raw.Replace("\\n", "\n");
-                raw = raw.Replace("\\r", "\r");
-                raw = raw.Replace("\\t", "\t");
-                raw = raw.Replace("\\\"", "\"");
-                raw = raw.Replace("\0", "\\");
-                return raw;
-            }
-            catch { return ""; }
-        }
-
-        static async Task HandleAction(string action, string raw)
+        static async Task HandleAction(string action, JObject payload)
         {
             switch (action)
             {
                 case "attach":
                     try
                     {
+                        Log("Received 'attach' action.");
                         try
                         {
                             string binPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Bin", "erto3e4rortoergn.exe");
+                            Log("Checking background service: " + binPath);
                             if (File.Exists(binPath) && Process.GetProcessesByName("erto3e4rortoergn").Length == 0)
                             {
+                                Log("Starting background service...");
                                 Process.Start(new ProcessStartInfo
                                 {
                                     FileName = binPath,
                                     UseShellExecute = true
                                 });
+                                Log("Started background service.");
+                            }
+                            else
+                            {
+                                Log("Background service already running or file missing.");
                             }
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            Log("Process Start error: " + ex.ToString());
+                        }
 
+                        Log("Calling quorum.AttachAPI()...");
                         await quorum.AttachAPI();
+                        Log("quorum.AttachAPI() finished successfully.");
+                        
                         bool attached = quorum.IsAttached();
+                        Log("IsAttached: " + attached);
                         string state = attached ? "Attached" : "Detached";
                         Send(attached, "attach", "{\"state\":\"" + state + "\"}", "");
                     }
                     catch (Exception ex)
                     {
+                        Log("ATTACH ERROR: " + ex.ToString());
                         Send(false, "attach", null, ex.Message);
                     }
                     break;
@@ -114,7 +105,10 @@ namespace QuorumBridge
                 case "execute":
                     try
                     {
-                        string script = ExtractScript(raw);
+                        var data = payload["data"] as JObject;
+                        string script = data?["script"]?.ToString() ?? "";
+                        if (string.IsNullOrEmpty(script)) throw new Exception("Script payload the empty");
+
                         quorum.ExecuteScript(script);
                         Send(true, "execute", null, "");
                     }

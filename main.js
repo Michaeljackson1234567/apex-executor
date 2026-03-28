@@ -160,7 +160,7 @@ const SYNC_FILES = [
   'preload.js', 'version.json',
   'bootstrapper.html', 'preload_boot.js',
   'ApexBridge.exe', 'ApexBridge.dll', 'ApexBridge.deps.json', 'ApexBridge.runtimeconfig.json',
-  'QuorumAPI.dll'
+  'QuorumAPI.dll', 'Newtonsoft.Json.dll'
 ];
 
 function getLocalVersion() {

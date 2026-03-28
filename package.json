@@ -25,6 +25,10 @@
                                              "to":  "QuorumAPI.dll"
                                          },
                                          {
+                                             "from":  "Newtonsoft.Json.dll",
+                                             "to":  "Newtonsoft.Json.dll"
+                                         },
+                                         {
                                              "from":  "apex_bridge.ps1",
                                              "to":  "apex_bridge.ps1"
                                          },
