@@ -13,6 +13,8 @@ class ApexBridge
         try
         {
             quorum = new QuorumModule();
+            QuorumAPI.QuorumModule.UseOutput(true);
+            QuorumAPI.QuorumModule.Logger.OnLog += Quorum_OnLog;
             Send("ready", true, "Apex Bridge initialized with QuorumAPI");
         }
         catch (Exception ex)
@@ -38,14 +40,13 @@ class ApexBridge
                 {
                     string b64 = line.Substring(8);
                     string script = Encoding.UTF8.GetString(Convert.FromBase64String(b64));
-                    quorum.Execute(script);
+                    quorum.ExecuteScript(script);
                     Send("execute", true, "Script executed successfully");
                 }
                 else if (line.StartsWith("STATUS"))
                 {
-                    bool attached = quorum.IsAttached();
-                    Console.WriteLine("RESULT:status:" + (attached ? "true" : "false"));
-                    Console.Out.Flush();
+                    bool isAttached = quorum.IsAttached();
+                    Send("status", isAttached, isAttached ? "Attached" : "Not Attached");
                 }
                 else if (line.StartsWith("AUTOATTACH:"))
                 {
@@ -85,5 +86,10 @@ class ApexBridge
         msg = msg.Replace("\"", "'");
         Console.WriteLine("RESULT:" + cmd + ":" + (ok ? "ok" : "err") + ":" + msg);
         Console.Out.Flush();
+    }
+
+    private static void Quorum_OnLog(string message)
+    {
+        Console.WriteLine($"RESULT:log:ok:{message.Replace("\n", " ").Replace("\r", "")}");
     }
 }

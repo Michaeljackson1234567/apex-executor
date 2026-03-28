@@ -51,10 +51,6 @@
       </button>
     </div>
     <div class="nav-right">
-      <div class="user-profile hidden" id="nav-user">
-        <img src="" alt="Avatar" class="user-avatar" id="nav-avatar" />
-        <span class="user-name" id="nav-name">Player</span>
-      </div>
       <div class="roblox-status" id="roblox-status">
         <span class="rs-dot" id="rs-dot"></span>
         <span class="rs-text" id="rs-text">Checking...</span>
@@ -69,30 +65,42 @@
     <section class="page active" id="page-home">
       <div class="home-hero">
         <div class="hero-bg-glow"></div>
-        <div class="hero-inner">
-          <div class="hero-icon">
-            <svg class="hero-logo-svg" viewBox="0 0 64 64" width="48" height="48">
-              <path d="M32 6L8 54h12l4-8h16l4 8h12L32 6zm0 16l7 16H25l7-16z" fill="var(--logo-c1)"/>
-            </svg>
+        <div class="hero-content-left">
+          <div class="hero-inner">
+            <div class="hero-icon">
+              <svg class="hero-logo-svg" viewBox="0 0 64 64" width="48" height="48">
+                <path d="M32 6L8 54h12l4-8h16l4 8h12L32 6zm0 16l7 16H25l7-16z" fill="var(--logo-c1)"/>
+              </svg>
+            </div>
+            <div>
+              <h1 class="hero-title">APEX EXECUTOR</h1>
+              <p class="hero-sub">Inject &bull; Execute &bull; Dominate</p>
+            </div>
           </div>
-          <div>
-            <h1 class="hero-title">APEX EXECUTOR</h1>
-            <p class="hero-sub">Inject &bull; Execute &bull; Dominate</p>
+          <div class="hero-btns">
+            <button class="btn-w" id="btn-inject">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              INJECT
+            </button>
+            <button class="btn-g" id="btn-go-editor">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
+              EDITOR
+            </button>
+            <button class="btn-g" id="btn-go-scripts">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              SCRIPTS
+            </button>
           </div>
         </div>
-        <div class="hero-btns">
-          <button class="btn-w" id="btn-inject">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-            INJECT
-          </button>
-          <button class="btn-g" id="btn-go-editor">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
-            EDITOR
-          </button>
-          <button class="btn-g" id="btn-go-scripts">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            SCRIPTS
-          </button>
+        <div class="hero-profile-card hidden" id="hero-profile">
+          <div class="hpc-bg"></div>
+          <div class="hpc-content">
+            <img class="hpc-avatar" id="hero-avatar" src="" alt="Avatar" />
+            <div class="hpc-info">
+              <span class="hpc-welcome">Welcome back,</span>
+              <span class="hpc-name" id="hero-name">Player</span>
+            </div>
+          </div>
         </div>
       </div>
       <div class="home-stats">

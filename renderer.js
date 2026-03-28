@@ -111,10 +111,10 @@ async function showWelcome() {
       nameEl.textContent = res.user.displayName || res.user.name;
       avatar.src = res.user.avatarUrl || placeholder;
 
-      // Also set the persistent navbar user profile
-      const navAvatar = document.getElementById('nav-avatar');
-      const navName = document.getElementById('nav-name');
-      const navUser = document.getElementById('nav-user');
+      // Also set the persistent hero user profile
+      const navAvatar = document.getElementById('hero-avatar');
+      const navName = document.getElementById('hero-name');
+      const navUser = document.getElementById('hero-profile');
       
       if (navAvatar && navName && navUser) {
         navAvatar.src = avatar.src;

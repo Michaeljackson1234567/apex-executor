@@ -50,9 +50,25 @@ function startBridge() {
     windowsHide: true
   });
 
+  let bridgeErrored = false;
+
+  bridge.on('error', (err) => {
+    console.error('[Bridge] Spawn error:', err);
+    bridgeErrored = true;
+    bridgeReady = false;
+    let msg = err.message;
+    if (msg.includes('EACCES') || msg.includes('UNKNOWN')) {
+      msg = 'Failed to start bridge! Please run Apex Executor as Administrator.';
+    }
+    while (pendingCallbacks.length > 0) {
+      pendingCallbacks.shift()({ success: false, message: msg });
+    }
+  });
+
   let buffer = '';
 
   bridge.stdout.on('data', (data) => {
+    if (bridgeErrored) return;
     buffer += data.toString();
     const lines = buffer.split('\n');
     buffer = lines.pop(); // Keep incomplete line in buffer
@@ -66,6 +82,11 @@ function startBridge() {
       const cmd = parts[0];
       const status = parts[1];
       const msg = parts.slice(2).join(':');
+
+      if (cmd === 'log') {
+        console.log(`[QuorumAPI Native] ${msg}`);
+        continue;
+      }
 
       console.log(`[Bridge] ${cmd} -> ${status}: ${msg}`);
 

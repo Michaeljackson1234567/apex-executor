@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup><ApplicationManifest>app.manifest</ApplicationManifest></PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="QuorumAPI">
+      <HintPath>..\QuorumAPI.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy /Y &quot;$(TargetDir)*.dll&quot; &quot;$(ProjectDir)..\&quot;&#xD;&#xA;xcopy /Y &quot;$(TargetDir)*.exe&quot; &quot;$(ProjectDir)..\&quot;&#xD;&#xA;xcopy /Y &quot;$(TargetDir)*.json&quot; &quot;$(ProjectDir)..\&quot;" />
+  </Target>
+
+</Project>
