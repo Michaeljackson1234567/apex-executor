@@ -1,116 +1,153 @@
 using System;
-using System.Drawing;
-using System.IO;
-using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using System.IO;
 using QuorumAPI;
 
-class ApexBridge
+namespace ApexBridge
 {
-    static QuorumModule quorum;
-
-    static async Task Main(string[] args)
+    class Program
     {
-        // Log the working directory for debugging
-        Console.Error.WriteLine("[ApexBridge] CWD: " + Environment.CurrentDirectory);
-        Console.Error.WriteLine("[ApexBridge] EXE Dir: " + AppDomain.CurrentDomain.BaseDirectory);
-        
-        string dllCheck = Path.Combine(Environment.CurrentDirectory, "QuorumAPI.dll");
-        Console.Error.WriteLine("[ApexBridge] QuorumAPI.dll exists: " + File.Exists(dllCheck));
+        private static QuorumModule quorum;
 
-        try
+        static async Task Main(string[] args)
         {
             quorum = new QuorumModule();
-            quorum.StartCommunication(); // REQUIRED FOR EXECUTION!
-            Send("ready", true, "Apex Bridge initialized with Apex API");
-        }
-        catch (Exception ex)
-        {
-            Send("ready", false, "Failed to init Apex API: " + ex.Message);
-            Console.Error.WriteLine("[ApexBridge] INIT EXCEPTION: " + ex.ToString());
-            return;
-        }
+            QuorumAPI.QuorumModule._AutoUpdateLogs = false;
+            quorum.StartCommunication();
 
-        // Enable output logging
-        try
-        {
-            QuorumAPI.QuorumModule.UseOutput(true);
-            QuorumAPI.QuorumModule.Logger.OnLog += Quorum_OnLog;
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine("[ApexBridge] Logger setup failed (non-fatal): " + ex.Message);
-        }
-
-        string line;
-        while ((line = Console.ReadLine()) != null)
-        {
-            line = line.Trim();
-            if (string.IsNullOrEmpty(line)) continue;
-
-            try
+            string line;
+            while ((line = Console.ReadLine()) != null)
             {
-                if (line.StartsWith("ATTACH"))
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                try
                 {
-                    await quorum.AttachAPI();
-                    Send("attach", true, "Successfully attached to Roblox");
+                    string action = ExtractValue(line, "action");
+                    await HandleAction(action, line);
                 }
-                else if (line.StartsWith("EXECUTE:"))
+                catch (Exception ex)
                 {
-                    string b64 = line.Substring(8);
-                    string script = Encoding.UTF8.GetString(Convert.FromBase64String(b64));
-                    quorum.ExecuteScript(script);
-                    Send("execute", true, "Script executed successfully");
+                    Send(false, "error", null, ex.Message);
                 }
-                else if (line.StartsWith("STATUS"))
+            }
+
+            quorum.StopCommunication();
+        }
+
+        static string ExtractValue(string json, string key)
+        {
+            string search = "\"" + key + "\":\"";
+            int start = json.IndexOf(search);
+            if (start == -1) return "";
+            start += search.Length;
+            int end = json.IndexOf("\"", start);
+            if (end == -1) return "";
+            return json.Substring(start, end - start);
+        }
+
+        static string ExtractScript(string json)
+        {
+            string search = "\"script\":\"";
+            int start = json.IndexOf(search);
+            if (start == -1) return "";
+            start += search.Length;
+
+            int end = start;
+            while (end < json.Length)
+            {
+                if (json[end] == '\\')
                 {
-                    bool isAttached = quorum.IsAttached();
-                    Send("status", isAttached, isAttached ? "Attached" : "Not Attached");
+                    end += 2;
+                    continue;
                 }
-                else if (line.StartsWith("AUTOATTACH:"))
-                {
-                    bool val = line.Substring(11).Trim().ToLower() == "true";
-                    quorum.SetAutoAttach(val);
-                    Send("autoattach", true, "Auto-attach set to " + val);
-                }
-                else if (line.StartsWith("KILL"))
-                {
-                    QuorumAPI.QuorumModule.KillRoblox();
-                    Send("kill", true, "Roblox process killed");
-                }
-                else if (line.StartsWith("PING"))
-                {
-                    Send("ping", true, "pong");
-                }
-                else if (line.StartsWith("EXIT"))
-                {
-                    Send("exit", true, "Bridge shutting down");
+                if (json[end] == '"')
                     break;
-                }
-                else
-                {
-                    Send("unknown", false, "Unknown command: " + line);
-                }
+                end++;
             }
-            catch (Exception ex)
+
+            string raw = json.Substring(start, end - start);
+            raw = raw.Replace("\\\\", "\0");
+            raw = raw.Replace("\\n", "\n");
+            raw = raw.Replace("\\r", "\r");
+            raw = raw.Replace("\\t", "\t");
+            raw = raw.Replace("\\\"", "\"");
+            raw = raw.Replace("\0", "\\");
+            return raw;
+        }
+
+        static async Task HandleAction(string action, string raw)
+        {
+            switch (action)
             {
-                string cmd = line.Contains(":") ? line.Substring(0, line.IndexOf(':')) : line;
-                Send(cmd.ToLower(), false, ex.Message.Replace("\n", " ").Replace("\r", ""));
-                Console.Error.WriteLine("[ApexBridge] CMD EXCEPTION: " + ex.ToString());
+                case "attach":
+                    try
+                    {
+                        try
+                        {
+                            string binPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "bin", "erto3e4rortoergn.exe");
+                            if (File.Exists(binPath) && Process.GetProcessesByName("erto3e4rortoergn").Length == 0)
+                            {
+                                Process.Start(new ProcessStartInfo
+                                {
+                                    FileName = binPath,
+                                    UseShellExecute = true
+                                });
+                            }
+                        }
+                        catch { }
+
+                        await quorum.AttachAPI();
+                        bool attached = quorum.IsAttached();
+                        string state = attached ? "Attached" : "Detached";
+                        Send(attached, "attach", "{\"state\":\"" + state + "\"}", "");
+                    }
+                    catch (Exception ex)
+                    {
+                        Send(false, "attach", null, ex.Message);
+                    }
+                    break;
+
+                case "execute":
+                    try
+                    {
+                        string script = ExtractScript(raw);
+                        quorum.ExecuteScript(script);
+                        Send(true, "execute", null, "");
+                    }
+                    catch (Exception ex)
+                    {
+                        Send(false, "execute", null, ex.Message);
+                    }
+                    break;
+
+                case "is_attached":
+                    try
+                    {
+                        bool attached = quorum.IsAttached();
+                        Send(true, "is_attached", "{\"attached\":" + (attached ? "true" : "false") + "}", "");
+                    }
+                    catch (Exception ex)
+                    {
+                        Send(false, "is_attached", null, ex.Message);
+                    }
+                    break;
+
+                default:
+                    Send(false, action, null, "Unknown action");
+                    break;
             }
         }
-    }
 
-    static void Send(string cmd, bool ok, string msg)
-    {
-        msg = msg.Replace("\"", "'");
-        Console.WriteLine("RESULT:" + cmd + ":" + (ok ? "ok" : "err") + ":" + msg);
-        Console.Out.Flush();
-    }
-
-    private static void Quorum_OnLog(string message, Color color)
-    {
-        Console.WriteLine($"RESULT:log:ok:{message.Replace("\n", " ").Replace("\r", "")}");
-        Console.Out.Flush();
+        static void Send(bool success, string action, string dataJson, string error)
+        {
+            string data = dataJson ?? "null";
+            string errEscaped = (error ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "");
+            string json = "{\"success\":" + (success ? "true" : "false")
+                + ",\"action\":\"" + action
+                + "\",\"data\":" + data
+                + ",\"error\":\"" + errEscaped + "\"}";
+            Console.WriteLine(json);
+            Console.Out.Flush();
+        }
     }
 }
