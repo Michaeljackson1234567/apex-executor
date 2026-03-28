@@ -13,6 +13,7 @@ class ApexBridge
         try
         {
             quorum = new QuorumModule();
+            quorum.StartCommunication();
             QuorumAPI.QuorumModule.UseOutput(true);
             QuorumAPI.QuorumModule.Logger.OnLog += Quorum_OnLog;
             Send("ready", true, "Apex Bridge initialized with Apex API");
