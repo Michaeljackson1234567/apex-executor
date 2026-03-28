@@ -10,18 +10,38 @@ class ApexBridge
 
     static async Task Main(string[] args)
     {
+        // Log the working directory so we can debug path issues
+        Console.Error.WriteLine("[ApexBridge] CWD: " + Environment.CurrentDirectory);
+        Console.Error.WriteLine("[ApexBridge] EXE Dir: " + AppDomain.CurrentDomain.BaseDirectory);
+        
+        // Check if QuorumAPI.dll exists next to us
+        string dllCheck = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "QuorumAPI.dll");
+        Console.Error.WriteLine("[ApexBridge] QuorumAPI.dll exists at base: " + File.Exists(dllCheck));
+        
+        string dllCheck2 = Path.Combine(Environment.CurrentDirectory, "QuorumAPI.dll");
+        Console.Error.WriteLine("[ApexBridge] QuorumAPI.dll exists at CWD: " + File.Exists(dllCheck2));
+
         try
         {
             quorum = new QuorumModule();
-            quorum.StartCommunication();
-            QuorumAPI.QuorumModule.UseOutput(true);
-            QuorumAPI.QuorumModule.Logger.OnLog += Quorum_OnLog;
             Send("ready", true, "Apex Bridge initialized with Apex API");
         }
         catch (Exception ex)
         {
             Send("ready", false, "Failed to init Apex API: " + ex.Message);
+            Console.Error.WriteLine("[ApexBridge] INIT EXCEPTION: " + ex.ToString());
             return;
+        }
+
+        // Enable output logging after successful init
+        try
+        {
+            QuorumAPI.QuorumModule.UseOutput(true);
+            QuorumAPI.QuorumModule.Logger.OnLog += Quorum_OnLog;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("[ApexBridge] Logger setup failed (non-fatal): " + ex.Message);
         }
 
         string line;
@@ -34,6 +54,7 @@ class ApexBridge
             {
                 if (line.StartsWith("ATTACH"))
                 {
+                    Send("attach", true, "Attaching to Roblox...");
                     await quorum.AttachAPI();
                     Send("attach", true, "Successfully attached to Roblox");
                 }
@@ -78,6 +99,7 @@ class ApexBridge
             {
                 string cmd = line.Contains(":") ? line.Substring(0, line.IndexOf(':')) : line;
                 Send(cmd.ToLower(), false, ex.Message.Replace("\n", " ").Replace("\r", ""));
+                Console.Error.WriteLine("[ApexBridge] CMD EXCEPTION: " + ex.ToString());
             }
         }
     }
@@ -92,5 +114,12 @@ class ApexBridge
     private static void Quorum_OnLog(string message)
     {
         Console.WriteLine($"RESULT:log:ok:{message.Replace("\n", " ").Replace("\r", "")}");
+        Console.Out.Flush();
+    }
+
+    private static void Quorum_OnLog(string message, System.Drawing.Color color)
+    {
+        Console.WriteLine($"RESULT:log:ok:{message.Replace("\n", " ").Replace("\r", "")}");
+        Console.Out.Flush();
     }
 }

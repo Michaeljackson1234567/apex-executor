@@ -25,66 +25,75 @@ function ensureSavedDir() {
   if (!fs.existsSync(SAVED_SCRIPTS_DIR)) fs.mkdirSync(SAVED_SCRIPTS_DIR, { recursive: true });
 }
 
-// ── QuorumAPI Bridge ─────────────────────────────────────────────────────
-// Launches a persistent PowerShell process that loads QuorumAPI.dll
-// and listens for commands on stdin, responding on stdout.
+// ── Apex API Bridge ──────────────────────────────────────────────────────
+// Launches ApexBridge.exe which loads QuorumAPI.dll and listens for
+// commands on stdin, responding via stdout using RESULT: protocol.
 
 let pendingCallbacks = [];
+let bridgeReadyResolve = null; // resolve function for waitForBridgeReady
 
 function startBridge() {
-  const bridgeScript = getResourcePath('ApexBridge.exe');
-  if (!fs.existsSync(bridgeScript)) {
-    console.error('[Bridge] ApexBridge.exe not found at', bridgeScript);
-    return;
+  const bridgeExe = getResourcePath('ApexBridge.exe');
+  const bridgeDir = app.isPackaged ? process.resourcesPath : __dirname;
+
+  console.log('[Bridge] === STARTING BRIDGE ===' );
+  console.log('[Bridge] bridgeExe:', bridgeExe);
+  console.log('[Bridge] bridgeDir (CWD):', bridgeDir);
+  console.log('[Bridge] bridgeExe exists:', fs.existsSync(bridgeExe));
+  console.log('[Bridge] QuorumAPI.dll exists:', fs.existsSync(path.join(bridgeDir, 'QuorumAPI.dll')));
+  console.log('[Bridge] Bin folder exists:', fs.existsSync(path.join(bridgeDir, 'Bin')));
+
+  if (!fs.existsSync(bridgeExe)) {
+    console.error('[Bridge] ApexBridge.exe NOT FOUND at', bridgeExe);
+    return false;
   }
 
-  const dllPath = getResourcePath('QuorumAPI.dll');
-  if (!fs.existsSync(dllPath)) {
-    console.error('[Bridge] QuorumAPI.dll not found at', dllPath);
-    // Continue anyway as ApexBridge might have it built-in or adjacent.
+  // Kill old bridge if still alive
+  if (bridge && !bridge.killed) {
+    try { bridge.kill(); } catch(e) {}
+    bridge = null;
+    bridgeReady = false;
   }
 
-  bridge = spawn(bridgeScript, [], {
-    cwd: path.dirname(bridgeScript),
+  bridge = spawn(bridgeExe, [], {
+    cwd: bridgeDir,
     stdio: ['pipe', 'pipe', 'pipe'],
     windowsHide: true
   });
 
-  let bridgeErrored = false;
+  console.log('[Bridge] Spawned PID:', bridge.pid);
 
   bridge.on('error', (err) => {
-    console.error('[Bridge] Spawn error:', err);
-    bridgeErrored = true;
+    console.error('[Bridge] SPAWN ERROR:', err.message);
+    bridge = null;
     bridgeReady = false;
-    let msg = err.message;
-    if (msg.includes('EACCES') || msg.includes('UNKNOWN')) {
-      msg = 'Failed to start bridge! Please run Apex Executor as Administrator.';
-    }
     while (pendingCallbacks.length > 0) {
-      pendingCallbacks.shift()({ success: false, message: msg });
+      pendingCallbacks.shift()({ success: false, message: 'Bridge spawn failed: ' + err.message });
+    }
+    if (bridgeReadyResolve) {
+      bridgeReadyResolve(false);
+      bridgeReadyResolve = null;
     }
   });
 
   let buffer = '';
 
   bridge.stdout.on('data', (data) => {
-    if (bridgeErrored) return;
     buffer += data.toString();
     const lines = buffer.split('\n');
-    buffer = lines.pop(); // Keep incomplete line in buffer
+    buffer = lines.pop();
 
     for (const line of lines) {
       const trimmed = line.trim();
       if (!trimmed || !trimmed.startsWith('RESULT:')) continue;
 
-      // Protocol: RESULT:<cmd>:<ok|err>:<message>
       const parts = trimmed.substring(7).split(':');
       const cmd = parts[0];
       const status = parts[1];
       const msg = parts.slice(2).join(':');
 
       if (cmd === 'log') {
-        console.log(`[QuorumAPI Native] ${msg}`);
+        console.log(`[Apex API] ${msg}`);
         continue;
       }
 
@@ -92,10 +101,13 @@ function startBridge() {
 
       if (cmd === 'ready') {
         bridgeReady = status === 'ok';
-        console.log('[Bridge] Ready:', bridgeReady);
+        console.log('[Bridge] Ready state:', bridgeReady);
+        if (bridgeReadyResolve) {
+          bridgeReadyResolve(bridgeReady);
+          bridgeReadyResolve = null;
+        }
       }
 
-      // Resolve any pending callback
       if (pendingCallbacks.length > 0) {
         const cb = pendingCallbacks.shift();
         cb({ success: status === 'ok', message: msg, cmd });
@@ -104,31 +116,55 @@ function startBridge() {
   });
 
   bridge.stderr.on('data', (data) => {
-    console.error('[Bridge STDERR]', data.toString());
+    console.error('[Bridge STDERR]', data.toString().trim());
   });
 
   bridge.on('close', (code) => {
-    console.log('[Bridge] Process exited with code', code);
+    console.log('[Bridge] Process CLOSED with code', code);
     bridge = null;
     bridgeReady = false;
-    // Reject any pending callbacks
     while (pendingCallbacks.length > 0) {
-      const cb = pendingCallbacks.shift();
-      cb({ success: false, message: 'Bridge process exited unexpectedly' });
+      pendingCallbacks.shift()({ success: false, message: 'Bridge process exited (code ' + code + ')' });
     }
+    if (bridgeReadyResolve) {
+      bridgeReadyResolve(false);
+      bridgeReadyResolve = null;
+    }
+  });
+
+  return true;
+}
+
+function waitForBridgeReady(timeoutMs = 10000) {
+  if (bridgeReady) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    bridgeReadyResolve = resolve;
+    setTimeout(() => {
+      if (bridgeReadyResolve === resolve) {
+        bridgeReadyResolve = null;
+        console.error('[Bridge] Ready TIMEOUT after', timeoutMs, 'ms');
+        resolve(false);
+      }
+    }, timeoutMs);
   });
 }
 
 function sendBridgeCommand(cmd) {
   return new Promise((resolve) => {
     if (!bridge || bridge.killed) {
+      console.error('[Bridge] sendCommand failed: bridge is', bridge ? 'killed' : 'null');
       resolve({ success: false, message: 'Bridge not running. Try injecting again.' });
+      return;
+    }
+    if (!bridgeReady) {
+      console.error('[Bridge] sendCommand failed: bridgeReady is false');
+      resolve({ success: false, message: 'Bridge not ready yet. Wait a moment and try again.' });
       return;
     }
     pendingCallbacks.push(resolve);
     bridge.stdin.write(cmd + '\n');
+    console.log('[Bridge] Sent command:', cmd.substring(0, 50));
 
-    // Timeout after 30 seconds
     setTimeout(() => {
       const idx = pendingCallbacks.indexOf(resolve);
       if (idx !== -1) {
@@ -323,9 +359,20 @@ async function bootSequence() {
   }
 
   // Start bridge
-  bootSend('Starting QuorumAPI bridge...');
-  startBridge();
-  await delay(1200);
+  bootSend('Starting Apex API bridge...');
+  const bridgeStarted = startBridge();
+  if (bridgeStarted) {
+    bootSend('Waiting for bridge...');
+    const ready = await waitForBridgeReady(10000);
+    if (ready) {
+      bootSend('Bridge ready ✓', 'ok');
+    } else {
+      bootSend('Bridge not ready (will retry on inject)', 'warn');
+    }
+  } else {
+    bootSend('Bridge failed to start!', 'err');
+  }
+  await delay(500);
 
   bootSend('Launching Apex Executor...', 'ok', 100);
   await delay(500);
@@ -383,29 +430,41 @@ ipcMain.on('win-maximize', () => {
 });
 ipcMain.on('win-close', () => mainWindow?.close());
 
-// ── INJECT — uses QuorumAPI via bridge ───────────────────────────────────
+// ── INJECT — uses Apex API via bridge ────────────────────────────────────
 ipcMain.handle('inject', async () => {
+  console.log('[Inject] === INJECT CLICKED ===' );
+
   // Check if Roblox is running first
   const robloxUp = await isRobloxRunning();
+  console.log('[Inject] Roblox running:', robloxUp);
   if (!robloxUp) {
     return { success: false, message: 'Roblox is not running! Open Roblox first, then inject.' };
   }
 
-  // Check QuorumAPI.dll exists
-  const dllPath = getResourcePath('QuorumAPI.dll');
-  if (!fs.existsSync(dllPath)) {
-    return { success: false, message: 'QuorumAPI.dll not found in executor directory.' };
-  }
-
   // Restart bridge if it died
   if (!bridge || bridge.killed) {
-    startBridge();
-    // Wait for bridge to be ready
-    await new Promise(r => setTimeout(r, 2000));
+    console.log('[Inject] Bridge not running, restarting...');
+    const started = startBridge();
+    if (!started) {
+      return { success: false, message: 'Failed to start bridge. ApexBridge.exe missing?' };
+    }
+    const ready = await waitForBridgeReady(10000);
+    if (!ready) {
+      return { success: false, message: 'Bridge failed to initialize. Check console for errors.' };
+    }
   }
 
-  // Send attach command
+  if (!bridgeReady) {
+    console.log('[Inject] Bridge exists but not ready, waiting...');
+    const ready = await waitForBridgeReady(5000);
+    if (!ready) {
+      return { success: false, message: 'Bridge not ready. Try again in a moment.' };
+    }
+  }
+
+  console.log('[Inject] Sending ATTACH command...');
   const result = await sendBridgeCommand('ATTACH');
+  console.log('[Inject] ATTACH result:', JSON.stringify(result));
   return result;
 });
 
