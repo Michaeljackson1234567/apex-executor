@@ -1,14 +1,14 @@
 using System;
-using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using QuorumAPI;
 
-namespace ApexBridge
+namespace QuorumBridge
 {
     class Program
     {
-        private static QuorumModule quorum;
+        static QuorumModule quorum;
 
         static async Task Main(string[] args)
         {
@@ -20,6 +20,7 @@ namespace ApexBridge
             while ((line = Console.ReadLine()) != null)
             {
                 if (string.IsNullOrWhiteSpace(line)) continue;
+
                 try
                 {
                     string action = ExtractValue(line, "action");
@@ -36,43 +37,46 @@ namespace ApexBridge
 
         static string ExtractValue(string json, string key)
         {
-            string search = "\"" + key + "\":\"";
-            int start = json.IndexOf(search);
-            if (start == -1) return "";
-            start += search.Length;
-            int end = json.IndexOf("\"", start);
-            if (end == -1) return "";
-            return json.Substring(start, end - start);
+            try
+            {
+                string search = "\"" + key + "\":\"";
+                int start = json.IndexOf(search);
+                if (start == -1) return "";
+                start += search.Length;
+                int end = json.IndexOf("\"", start);
+                if (end == -1) return "";
+                return json.Substring(start, end - start);
+            }
+            catch { return ""; }
         }
 
         static string ExtractScript(string json)
         {
-            string search = "\"script\":\"";
-            int start = json.IndexOf(search);
-            if (start == -1) return "";
-            start += search.Length;
-
-            int end = start;
-            while (end < json.Length)
+            try
             {
-                if (json[end] == '\\')
-                {
-                    end += 2;
-                    continue;
-                }
-                if (json[end] == '"')
-                    break;
-                end++;
-            }
+                string search = "\"script\":\"";
+                int start = json.IndexOf(search);
+                if (start == -1) return "";
+                start += search.Length;
 
-            string raw = json.Substring(start, end - start);
-            raw = raw.Replace("\\\\", "\0");
-            raw = raw.Replace("\\n", "\n");
-            raw = raw.Replace("\\r", "\r");
-            raw = raw.Replace("\\t", "\t");
-            raw = raw.Replace("\\\"", "\"");
-            raw = raw.Replace("\0", "\\");
-            return raw;
+                int end = start;
+                while (end < json.Length)
+                {
+                    if (json[end] == '\\') { end += 2; continue; }
+                    if (json[end] == '"') break;
+                    end++;
+                }
+
+                string raw = json.Substring(start, end - start);
+                raw = raw.Replace("\\\\", "\0");
+                raw = raw.Replace("\\n", "\n");
+                raw = raw.Replace("\\r", "\r");
+                raw = raw.Replace("\\t", "\t");
+                raw = raw.Replace("\\\"", "\"");
+                raw = raw.Replace("\0", "\\");
+                return raw;
+            }
+            catch { return ""; }
         }
 
         static async Task HandleAction(string action, string raw)
@@ -84,7 +88,7 @@ namespace ApexBridge
                     {
                         try
                         {
-                            string binPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "bin", "erto3e4rortoergn.exe");
+                            string binPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Bin", "erto3e4rortoergn.exe");
                             if (File.Exists(binPath) && Process.GetProcessesByName("erto3e4rortoergn").Length == 0)
                             {
                                 Process.Start(new ProcessStartInfo
@@ -131,7 +135,7 @@ namespace ApexBridge
                         Send(false, "is_attached", null, ex.Message);
                     }
                     break;
-
+                    
                 default:
                     Send(false, action, null, "Unknown action");
                     break;
@@ -146,6 +150,7 @@ namespace ApexBridge
                 + ",\"action\":\"" + action
                 + "\",\"data\":" + data
                 + ",\"error\":\"" + errEscaped + "\"}";
+            
             Console.WriteLine(json);
             Console.Out.Flush();
         }
