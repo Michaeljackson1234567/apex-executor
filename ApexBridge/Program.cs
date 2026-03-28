@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,20 +11,17 @@ class ApexBridge
 
     static async Task Main(string[] args)
     {
-        // Log the working directory so we can debug path issues
+        // Log the working directory for debugging
         Console.Error.WriteLine("[ApexBridge] CWD: " + Environment.CurrentDirectory);
         Console.Error.WriteLine("[ApexBridge] EXE Dir: " + AppDomain.CurrentDomain.BaseDirectory);
         
-        // Check if QuorumAPI.dll exists next to us
-        string dllCheck = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "QuorumAPI.dll");
-        Console.Error.WriteLine("[ApexBridge] QuorumAPI.dll exists at base: " + File.Exists(dllCheck));
-        
-        string dllCheck2 = Path.Combine(Environment.CurrentDirectory, "QuorumAPI.dll");
-        Console.Error.WriteLine("[ApexBridge] QuorumAPI.dll exists at CWD: " + File.Exists(dllCheck2));
+        string dllCheck = Path.Combine(Environment.CurrentDirectory, "QuorumAPI.dll");
+        Console.Error.WriteLine("[ApexBridge] QuorumAPI.dll exists: " + File.Exists(dllCheck));
 
         try
         {
             quorum = new QuorumModule();
+            quorum.StartCommunication(); // REQUIRED FOR EXECUTION!
             Send("ready", true, "Apex Bridge initialized with Apex API");
         }
         catch (Exception ex)
@@ -33,7 +31,7 @@ class ApexBridge
             return;
         }
 
-        // Enable output logging after successful init
+        // Enable output logging
         try
         {
             QuorumAPI.QuorumModule.UseOutput(true);
@@ -54,7 +52,6 @@ class ApexBridge
             {
                 if (line.StartsWith("ATTACH"))
                 {
-                    Send("attach", true, "Attaching to Roblox...");
                     await quorum.AttachAPI();
                     Send("attach", true, "Successfully attached to Roblox");
                 }
@@ -111,13 +108,7 @@ class ApexBridge
         Console.Out.Flush();
     }
 
-    private static void Quorum_OnLog(string message)
-    {
-        Console.WriteLine($"RESULT:log:ok:{message.Replace("\n", " ").Replace("\r", "")}");
-        Console.Out.Flush();
-    }
-
-    private static void Quorum_OnLog(string message, System.Drawing.Color color)
+    private static void Quorum_OnLog(string message, Color color)
     {
         Console.WriteLine($"RESULT:log:ok:{message.Replace("\n", " ").Replace("\r", "")}");
         Console.Out.Flush();
