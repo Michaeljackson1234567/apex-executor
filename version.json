@@ -1,8 +1,8 @@
 {
-  "version": "1.3.1",
+  "version": "1.3.2",
   "changelog": [
-    "Fixed binary corruption in auto-updater.",
-    "Restored QuorumAPI.dll integrity!"
+    "Fixed Execution pipeline via background IPC.",
+    "Brought back critical communication threads for executing scripts."
   ],
   "files": [
     "main.js",
