@@ -1,5 +1,5 @@
 {
-  "version": "2.1.0",
+  "version": "2.1.1",
   "changelog": [
     "Complete bridge rewrite using proven JSON IPC protocol.",
     "Real injection and script execution via QuorumAPI.",

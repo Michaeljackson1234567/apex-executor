@@ -116,7 +116,7 @@ function startBridge() {
   return true;
 }
 
-function sendBridgeJSON(action, data) {
+function sendBridgeJSON(action, data = null, timeout = 30000) {
   return new Promise((resolve) => {
     if (!bridge || bridge.killed || !bridgeReady) {
       resolve({ success: false, action, error: 'Bridge not running' });
@@ -130,7 +130,7 @@ function sendBridgeJSON(action, data) {
     bridge.stdin.write(msg + '\n');
     console.log('[Bridge] Sent:', msg.substring(0, 100));
 
-    // Timeout after 30 seconds
+    // Timeout after specified interval
     setTimeout(() => {
       const cbs = responseCallbacks[action] || [];
       const idx = cbs.indexOf(resolve);
@@ -138,7 +138,7 @@ function sendBridgeJSON(action, data) {
         cbs.splice(idx, 1);
         resolve({ success: false, action, error: 'Bridge command timed out' });
       }
-    }, 30000);
+    }, timeout);
   });
 }
 
@@ -413,7 +413,7 @@ ipcMain.handle('inject', async () => {
   }
 
   console.log('[Inject] Sending attach JSON...');
-  const result = await sendBridgeJSON('attach');
+  const result = await sendBridgeJSON('attach', null, 180000); // 3-minute timeout to allow for Defender scans & Quorum offset downloads
   console.log('[Inject] attach result:', JSON.stringify(result));
 
   if (result.success) {
