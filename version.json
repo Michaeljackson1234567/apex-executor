@@ -15,6 +15,7 @@
     "ApexBridge.exe",
     "ApexBridge.dll",
     "ApexBridge.deps.json",
-    "ApexBridge.runtimeconfig.json"
+    "ApexBridge.runtimeconfig.json",
+    "QuorumAPI.dll"
   ]
 }

@@ -135,7 +135,8 @@ const SYNC_FILES = [
   'renderer.js', 'style.css', 'index.html',
   'preload.js', 'version.json',
   'bootstrapper.html', 'preload_boot.js',
-  'ApexBridge.exe', 'ApexBridge.dll', 'ApexBridge.deps.json', 'ApexBridge.runtimeconfig.json'
+  'ApexBridge.exe', 'ApexBridge.dll', 'ApexBridge.deps.json', 'ApexBridge.runtimeconfig.json',
+  'QuorumAPI.dll'
 ];
 
 function getLocalVersion() {
