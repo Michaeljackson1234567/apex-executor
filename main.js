@@ -211,22 +211,22 @@ function saveLocalVersion(data) {
   fs.writeFileSync(LOCAL_VERSION_FILE, JSON.stringify(data, null, 2), 'utf8');
 }
 
-function fetchFile(url) {
+function fetchFile(url, asBuffer = false) {
   return new Promise((resolve, reject) => {
     const lib = url.startsWith('https') ? https : http;
     lib.get(url, { headers: { 'User-Agent': 'ApexExecutor/1.0' } }, (res) => {
       if (res.statusCode === 302 || res.statusCode === 301) {
         lib.get(res.headers.location, { headers: { 'User-Agent': 'ApexExecutor/1.0' } }, (res2) => {
-          let data = '';
-          res2.on('data', c => data += c);
-          res2.on('end', () => resolve(data));
+          let chunks = [];
+          res2.on('data', c => chunks.push(c));
+          res2.on('end', () => resolve(asBuffer ? Buffer.concat(chunks) : Buffer.concat(chunks).toString('utf8')));
         }).on('error', reject);
         return;
       }
       if (res.statusCode !== 200) { reject(new Error(`HTTP ${res.statusCode}`)); return; }
-      let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => resolve(data));
+      let chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => resolve(asBuffer ? Buffer.concat(chunks) : Buffer.concat(chunks).toString('utf8')));
     }).on('error', reject);
   });
 }
@@ -328,11 +328,12 @@ async function bootSequence() {
         const file = filesToSync[i];
         bootSend(`Downloading ${file}...`, '', Math.round(((i) / filesToSync.length) * 100));
         try {
-          const content = await fetchFile(`${GITHUB_RAW}/${file}`);
+          const isBinary = file.endsWith('.exe') || file.endsWith('.dll') || file.endsWith('.png');
+          const content = await fetchFile(`${GITHUB_RAW}/${file}`, isBinary);
           const destPath = path.join(appDir, file);
           const dir = path.dirname(destPath);
           if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-          fs.writeFileSync(destPath, content, 'utf8');
+          fs.writeFileSync(destPath, content);
         } catch (e) {
           console.error(`[Update] Failed to sync ${file}:`, e.message);
         }

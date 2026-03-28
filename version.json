@@ -1,9 +1,8 @@
 {
-  "version": "1.3.0",
+  "version": "1.3.1",
   "changelog": [
-    "Fixed bridge initialization completely.",
-    "Improved error reporting and stability.",
-    "Better injection flow with retry logic."
+    "Fixed binary corruption in auto-updater.",
+    "Restored QuorumAPI.dll integrity!"
   ],
   "files": [
     "main.js",
