@@ -15,11 +15,11 @@ class ApexBridge
             quorum = new QuorumModule();
             QuorumAPI.QuorumModule.UseOutput(true);
             QuorumAPI.QuorumModule.Logger.OnLog += Quorum_OnLog;
-            Send("ready", true, "Apex Bridge initialized with QuorumAPI");
+            Send("ready", true, "Apex Bridge initialized with Apex API");
         }
         catch (Exception ex)
         {
-            Send("ready", false, "Failed to init QuorumAPI: " + ex.Message);
+            Send("ready", false, "Failed to init Apex API: " + ex.Message);
             return;
         }
 

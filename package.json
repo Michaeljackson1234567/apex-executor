@@ -54,16 +54,13 @@
                                                           ]
                                              }
                                          ],
-                              "icon":  "icon.ico",
+                              "icon":  "icon.png",
                               "requestedExecutionLevel":  "requireAdministrator"
                           },
                   "nsis":  {
-                               "oneClick":  true,
+                               "oneClick":  false,
                                "perMachine":  false,
-                               "allowToChangeInstallationDirectory":  false,
-                               "installerIcon":  "icon.ico",
-                               "uninstallerIcon":  "icon.ico",
-                               "installerHeaderIcon":  "icon.ico",
+                               "allowToChangeInstallationDirectory":  true,
                                "createDesktopShortcut":  true,
                                "createStartMenuShortcut":  true,
                                "shortcutName":  "Apex Executor"
