@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "changelog": [
+    "Initial release of Apex Executor",
+    "QuorumAPI integration with PowerShell bridge",
+    "Script Hub powered by RScripts",
+    "Monaco editor with Lua syntax highlighting",
+    "Auto-update system synced with GitHub"
+  ],
+  "files": [
+    "main.js",
+    "renderer.js",
+    "style.css",
+    "index.html",
+    "preload.js",
+    "apex_bridge.ps1",
+    "version.json"
+  ]
+}
