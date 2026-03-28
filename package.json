@@ -1,0 +1,76 @@
+{
+    "name":  "apex-executor",
+    "version":  "1.0.0",
+    "description":  "Apex Executor — Roblox Script Executor",
+    "main":  "main.js",
+    "author":  "Apex",
+    "scripts":  {
+                    "start":  "electron .",
+                    "build":  "electron-builder --win",
+                    "pack":  "electron-builder --dir"
+                },
+    "build":  {
+                  "appId":  "com.apex.executor",
+                  "productName":  "Apex Executor",
+                  "directories":  {
+                                      "output":  "dist"
+                                  },
+                  "files":  [
+                                "**/*",
+                                "!dist/**"
+                            ],
+                  "extraResources":  [
+                                         {
+                                             "from":  "QuorumAPI.dll",
+                                             "to":  "QuorumAPI.dll"
+                                         },
+                                         {
+                                             "from":  "apex_bridge.ps1",
+                                             "to":  "apex_bridge.ps1"
+                                         },
+                                         {
+                                             "from":  "Bin/**",
+                                             "to":  "Bin/"
+                                         },
+                                         {
+                                             "from":  "AutoExec/**",
+                                             "to":  "AutoExec/"
+                                         },
+                                         {
+                                             "from":  "Scripts/**",
+                                             "to":  "Scripts/"
+                                         },
+                                         {
+                                             "from":  "Workspace/**",
+                                             "to":  "Workspace/"
+                                         }
+                                     ],
+                  "win":  {
+                              "target":  [
+                                             {
+                                                 "target":  "nsis",
+                                                 "arch":  [
+                                                              "x64"
+                                                          ]
+                                             }
+                                         ],
+                              "icon":  "icon.ico",
+                              "requestedExecutionLevel":  "requireAdministrator"
+                          },
+                  "nsis":  {
+                               "oneClick":  true,
+                               "perMachine":  false,
+                               "allowToChangeInstallationDirectory":  false,
+                               "installerIcon":  "icon.ico",
+                               "uninstallerIcon":  "icon.ico",
+                               "installerHeaderIcon":  "icon.ico",
+                               "createDesktopShortcut":  true,
+                               "createStartMenuShortcut":  true,
+                               "shortcutName":  "Apex Executor"
+                           }
+              },
+    "devDependencies":  {
+                            "electron":  "^27.1.0",
+                            "electron-builder":  "^24.0.0"
+                        }
+}
