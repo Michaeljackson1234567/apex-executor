@@ -344,7 +344,7 @@ function fetchJSON(url) {
   });
 }
 
-// ── Check if Roblox is running ───────────────────────────────────────────
+// ── Check if Roblox is running ───────────────────────────────────────��───
 function isRobloxRunning() {
   return new Promise((resolve) => {
     exec('tasklist /FI "IMAGENAME eq RobloxPlayerBeta.exe" /NH', (err, stdout) => {

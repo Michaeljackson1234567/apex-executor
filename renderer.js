@@ -110,6 +110,18 @@ async function showWelcome() {
     if (res.success && res.user) {
       nameEl.textContent = res.user.displayName || res.user.name;
       avatar.src = res.user.avatarUrl || placeholder;
+
+      // Also set the persistent navbar user profile
+      const navAvatar = document.getElementById('nav-avatar');
+      const navName = document.getElementById('nav-name');
+      const navUser = document.getElementById('nav-user');
+      
+      if (navAvatar && navName && navUser) {
+        navAvatar.src = avatar.src;
+        navName.textContent = nameEl.textContent;
+        navUser.classList.remove('hidden');
+      }
+
       log('info', '👋 Welcome back, ' + (res.user.displayName || res.user.name) + '!');
     } else {
       nameEl.textContent = 'Player';
@@ -142,7 +154,7 @@ async function doExec(code) {
   else log('error', '✗ ' + res.message);
 }
 
-// ── Monaco Editor ────────────────────────────────────────────────────────────
+// ── Monaco Editor ─��──────────────────────────────────────────────────────────
 require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
 
 require(['vs/editor/editor.main'], function () {
@@ -392,7 +404,7 @@ document.getElementById('save-confirm').onclick = async () => {
 };
 document.getElementById('save-cancel').onclick = () => { document.getElementById('save-dialog').classList.add('hidden'); pendingSaveCode = null; };
 
-// ── Settings ─────────────────────────────────────────────────────────────────
+// ── Settings ─────────────────────────────────────────────────────────────���───
 document.getElementById('st-topmost').onchange = (e) => { apex.setTopmost(e.target.checked); log('info', 'Always on top: ' + (e.target.checked ? 'ON' : 'OFF')); };
 
 document.getElementById('st-opacity').oninput = (e) => {
@@ -547,7 +559,7 @@ document.getElementById('modal-save').onclick = () => {
   document.getElementById('save-name').focus();
 };
 
-// ═══ SAVED SCRIPTS ═══════════════════════════════════════════════════════════
+// ═══ SAVED SCRIPTS ════════════════════���══════════════════════════════════════
 async function loadSaved() {
   const list = document.getElementById('sv-list');
   const empty = document.getElementById('sv-empty');
@@ -591,7 +603,7 @@ async function loadSaved() {
 document.getElementById('sv-open-folder').onclick = () => apex.openScriptsFolder();
 document.getElementById('sv-refresh').onclick = () => loadSaved();
 
-// ── Keyboard ─────────────────────────────────────────────────────────────────
+// ── Keyboard ──────────────────────────────���──────────────────────────────────
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeModal(); document.getElementById('save-dialog').classList.add('hidden'); } });
 
 // ═══ GITHUB SYNC — AUTO-UPDATE ═══════════════════════════════════════════════

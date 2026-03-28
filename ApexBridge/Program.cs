@@ -38,7 +38,7 @@ class ApexBridge
                 {
                     string b64 = line.Substring(8);
                     string script = Encoding.UTF8.GetString(Convert.FromBase64String(b64));
-                    quorum.ExecuteScript(script);
+                    quorum.Execute(script);
                     Send("execute", true, "Script executed successfully");
                 }
                 else if (line.StartsWith("STATUS"))
