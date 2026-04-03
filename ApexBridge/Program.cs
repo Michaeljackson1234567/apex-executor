@@ -9,7 +9,8 @@ namespace QuorumBridge
 {
     class Program
     {
-        static QuorumModule quorum;
+        static QuorumModule Velocity;
+        static int TargetPID = 0;
 
         static void Log(string message)
         {
@@ -21,11 +22,11 @@ namespace QuorumBridge
             Log("Bridge started.");
             try
             {
-                Log("Initializing QuorumModule.");
-                quorum = new QuorumModule();
+                Log("Initializing Velocity (QuorumModule).");
+                Velocity = new QuorumModule();
                 QuorumAPI.QuorumModule._AutoUpdateLogs = false;
                 Log("Starting communication.");
-                quorum.StartCommunication();
+                Velocity.StartCommunication();
             }
             catch (Exception ex)
             {
@@ -51,7 +52,7 @@ namespace QuorumBridge
             }
 
             Log("Bridge exiting.");
-            quorum?.StopCommunication();
+            Velocity?.StopCommunication();
         }
 
         static async Task HandleAction(string action, JObject payload)
@@ -86,14 +87,25 @@ namespace QuorumBridge
                             Log("Process Start error: " + ex.ToString());
                         }
 
-                        Log("Calling quorum.AttachAPI()...");
-                        await quorum.AttachAPI();
-                        Log("quorum.AttachAPI() finished successfully.");
+                        Process[] processes = Process.GetProcessesByName("RobloxPlayerBeta");
+                        if (processes.Length > 0)
+                        {
+                            TargetPID = processes[0].Id;
+                            Log("Found RobloxPlayerBeta PID: " + TargetPID);
+                            
+                            Log("Calling Velocity.Attach(" + TargetPID + ")...");
+                            await Velocity.Attach(TargetPID, false);
+                            Log("Velocity.Attach() finished successfully.");
+                        }
+                        else
+                        {
+                            throw new Exception("Roblox process not found. Please open the game.");
+                        }
                         
-                        bool attached = quorum.IsAttached();
+                        bool attached = Velocity.IsAttached();
                         Log("IsAttached: " + attached);
                         string state = attached ? "Attached" : "Detached";
-                        Send(attached, "attach", "{\"state\":\"" + state + "\"}", "");
+                        Send(attached, "attach", "{\"state\":\"" + state + "\"}", attached ? "" : "Attach returned false internally");
                     }
                     catch (Exception ex)
                     {
@@ -107,9 +119,15 @@ namespace QuorumBridge
                     {
                         var data = payload["data"] as JObject;
                         string script = data?["script"]?.ToString() ?? "";
-                        if (string.IsNullOrEmpty(script)) throw new Exception("Script payload the empty");
+                        if (string.IsNullOrEmpty(script)) throw new Exception("Script payload empty");
 
-                        quorum.ExecuteScript(script);
+                        if (TargetPID == 0)
+                        {
+                            Process[] procs = Process.GetProcessesByName("RobloxPlayerBeta");
+                            if (procs.Length > 0) TargetPID = procs[0].Id;
+                        }
+
+                        Velocity.Execute(TargetPID, script);
                         Send(true, "execute", null, "");
                     }
                     catch (Exception ex)
@@ -121,7 +139,7 @@ namespace QuorumBridge
                 case "is_attached":
                     try
                     {
-                        bool attached = quorum.IsAttached();
+                        bool attached = Velocity.IsAttached();
                         Send(true, "is_attached", "{\"attached\":" + (attached ? "true" : "false") + "}", "");
                     }
                     catch (Exception ex)
