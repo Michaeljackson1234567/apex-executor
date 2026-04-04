@@ -145,7 +145,7 @@ async function showWelcome() {
   overlay.onclick = () => { overlay.classList.add('hidden'); };
 }
 
-// ── EXECUTE ──────────────────────────────────────────────────────────────────
+// ── EXECUTE ───────────────────────────────────────────────────────────────��──
 async function doExec(code) {
   if (!code || !code.trim()) { log('warn', 'Empty script — nothing to execute.'); return; }
   log('info', '▸ Sending script...');

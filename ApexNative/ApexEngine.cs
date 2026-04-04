@@ -54,7 +54,9 @@ namespace ApexNative
                     return JObject.FromObject(new { success = false, message = "Roblox is not running! Open Roblox first, then inject." });
 
                 TargetPID = procs[0].Id;
-                await Velocity!.Attach(TargetPID, false);
+                await Task.Run(async () => {
+                    await Velocity!.Attach(TargetPID, false);
+                });
                 bool attached = Velocity.IsAttached();
 
                 if (attached)
@@ -82,7 +84,7 @@ namespace ApexNative
                     if (procs.Length > 0) TargetPID = procs[0].Id;
                 }
 
-                Velocity!.Execute(TargetPID, script);
+                Task.Run(() => Velocity!.Execute(TargetPID, script));
                 return JObject.FromObject(new { success = true, message = "Script executed successfully" });
             }
             catch (Exception ex)

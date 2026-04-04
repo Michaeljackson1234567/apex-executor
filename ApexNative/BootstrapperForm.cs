@@ -32,8 +32,9 @@ namespace ApexNative
 
         private async Task InitAsync()
         {
+            var options = new CoreWebView2EnvironmentOptions("--disable-gpu --disable-gpu-compositing --disable-software-rasterizer");
             var env = await CoreWebView2Environment.CreateAsync(null, 
-                Path.Combine(Path.GetTempPath(), "ApexWebView2"));
+                Path.Combine(Path.GetTempPath(), "ApexWebView2"), options);
             await webView.EnsureCoreWebView2Async(env);
 
             webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
