@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Apex Executor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Script hub filter bar */
+    .sh-filters{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+    .sf-btn{padding:5px 12px;border:1px solid var(--br);background:var(--b2);color:var(--t3);font-family:var(--f);font-size:10px;font-weight:600;border-radius:16px;cursor:pointer;letter-spacing:.3px;transition:all .2s}
+    .sf-btn:hover{border-color:var(--br3);color:var(--t1);background:var(--b3)}
+    .sf-btn.active{background:var(--w);color:var(--b0);border-color:var(--w)}
+  </style>
+</head>
+<body>
+
+  <!-- TITLEBAR -->
+  <header class="titlebar">
+    <div class="tb-brand">
+      <svg class="tb-logo" viewBox="0 0 32 32" width="18" height="18">
+        <path d="M16 3L4 27h6l2-4h8l2 4h6L16 3zm0 8l3.5 8h-7L16 11z" fill="var(--logo-c1)"/>
+      </svg>
+      <span class="tb-name">APEX</span>
+      <span class="tb-ver">v2.0</span>
+    </div>
+    <div class="tb-drag"></div>
+    <div class="tb-controls">
+      <button class="wc" id="wc-min"><svg width="10" height="10" viewBox="0 0 10 10"><line x1="1" y1="5" x2="9" y2="5" stroke="currentColor" stroke-width="1.2"/></svg></button>
+      <button class="wc" id="wc-max"><svg width="10" height="10" viewBox="0 0 10 10"><rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1" fill="none"/></svg></button>
+      <button class="wc wc-x" id="wc-close"><svg width="10" height="10" viewBox="0 0 10 10"><line x1="2" y1="2" x2="8" y2="8" stroke="currentColor" stroke-width="1.2"/><line x1="8" y1="2" x2="2" y2="8" stroke="currentColor" stroke-width="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <!-- NAV -->
+  <nav class="navbar">
+    <div class="nav-left">
+      <button class="nav-btn active" data-tab="home">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+        Home
+      </button>
+      <button class="nav-btn" data-tab="editor">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
+        Editor
+      </button>
+      <button class="nav-btn" data-tab="scripts">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Scripts
+      </button>
+      <button class="nav-btn" data-tab="saved">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
+        Saved
+      </button>
+      <button class="nav-btn" data-tab="settings">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
+    </div>
+    <div class="nav-right">
+      <div class="roblox-status" id="roblox-status">
+        <span class="rs-dot" id="rs-dot"></span>
+        <span class="rs-text" id="rs-text">Checking...</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- CONTENT -->
+  <div class="app-content">
+
+    <!-- HOME -->
+    <section class="page active" id="page-home">
+      <div class="home-hero">
+        <div class="hero-bg-glow"></div>
+        <div class="hero-content-left">
+          <div class="hero-inner">
+            <div class="hero-icon">
+              <svg class="hero-logo-svg" viewBox="0 0 64 64" width="48" height="48">
+                <path d="M32 6L8 54h12l4-8h16l4 8h12L32 6zm0 16l7 16H25l7-16z" fill="var(--logo-c1)"/>
+              </svg>
+            </div>
+            <div>
+              <h1 class="hero-title">APEX EXECUTOR</h1>
+              <p class="hero-sub">Inject &bull; Execute &bull; Dominate</p>
+            </div>
+          </div>
+          <div class="hero-btns">
+            <button class="btn-w" id="btn-inject">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              INJECT
+            </button>
+            <button class="btn-g" id="btn-go-editor">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
+              EDITOR
+            </button>
+            <button class="btn-g" id="btn-go-scripts">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              SCRIPTS
+            </button>
+          </div>
+        </div>
+        <div class="hero-profile-card hidden" id="hero-profile">
+          <div class="hpc-bg"></div>
+          <div class="hpc-content">
+            <img class="hpc-avatar" id="hero-avatar" src="" alt="Avatar" />
+            <div class="hpc-info">
+              <span class="hpc-welcome">Welcome back,</span>
+              <span class="hpc-name" id="hero-name">Player</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="home-stats">
+        <div class="scard">
+          <div class="scard-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+          <div><div class="scard-val" id="stat-status">Idle</div><div class="scard-lbl">Status</div></div>
+        </div>
+        <div class="scard">
+          <div class="scard-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5,3 19,12 5,21"/></svg></div>
+          <div><div class="scard-val" id="stat-execs">0</div><div class="scard-lbl">Executed</div></div>
+        </div>
+        <div class="scard">
+          <div class="scard-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div><div class="scard-val">Apex v2.0</div><div class="scard-lbl">Native Build</div></div>
+        </div>
+      </div>
+      <!-- Console -->
+      <div class="console">
+        <div class="console-top">
+          <span class="console-lbl"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4,17 10,11 4,5"/><line x1="12" y1="19" x2="20" y2="19"/></svg> CONSOLE</span>
+          <button class="console-clr" id="con-clr">Clear</button>
+        </div>
+        <div class="console-out" id="con-out"></div>
+      </div>
+    </section>
+
+    <!-- EDITOR -->
+    <section class="page" id="page-editor">
+      <div class="ed-bar">
+        <div class="ed-tab"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/></svg> script.lua</div>
+        <div class="ed-acts">
+          <button class="eb" id="eb-save" title="Save script"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg></button>
+          <button class="eb" id="eb-clear" title="Clear"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14H6L5,6"/></svg></button>
+          <button class="eb" id="eb-copy" title="Copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5,15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+          <div class="eb-sep"></div>
+          <button class="eb eb-exec" id="eb-exec" title="Execute (Ctrl+Enter)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5,3 19,12 5,21"/></svg>
+            Execute
+          </button>
+        </div>
+      </div>
+      <div id="monaco-wrap"></div>
+    </section>
+
+    <!-- SCRIPTS HUB -->
+    <section class="page" id="page-scripts">
+      <div class="sh-head">
+        <div><h2 class="sh-title">SCRIPTS</h2><p class="sh-sub">Browse community scripts from RScripts</p></div>
+        <div class="sh-controls">
+          <div class="sh-search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="sh-input" placeholder="Search scripts..." spellcheck="false" />
+          </div>
+          <div class="sh-pages">
+            <button class="pg" id="pg-prev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg></button>
+            <span id="pg-label">1 / 1</span>
+            <button class="pg" id="pg-next"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg></button>
+          </div>
+        </div>
+        <!-- FILTER BAR -->
+        <div class="sh-filters" id="sh-filters">
+          <button class="sf-btn active" data-filter="all">All</button>
+          <button class="sf-btn" data-filter="free">🆓 Free</button>
+          <button class="sf-btn" data-filter="keyless">🔓 Keyless</button>
+          <button class="sf-btn" data-filter="key">🔑 Key</button>
+          <button class="sf-btn" data-filter="mobile">📱 Mobile</button>
+          <button class="sf-btn" data-filter="pc">💻 PC Only</button>
+          <button class="sf-btn" data-filter="paid">💰 Paid</button>
+        </div>
+      </div>
+      <div class="sh-grid" id="sh-grid">
+        <div class="sh-loading" id="sh-loading"><div class="spin"></div><span>Loading scripts...</span></div>
+      </div>
+    </section>
+
+    <!-- SAVED SCRIPTS -->
+    <section class="page" id="page-saved">
+      <div class="sv-head">
+        <div><h2 class="sh-title">SAVED SCRIPTS</h2><p class="sh-sub">Your locally saved Lua scripts</p></div>
+        <div class="sv-acts">
+          <button class="btn-g" id="sv-open-folder">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            Open Folder
+          </button>
+          <button class="btn-g" id="sv-refresh">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+      <div class="sv-list" id="sv-list">
+        <div class="sv-empty" id="sv-empty">No saved scripts yet. Save one from the Editor!</div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="page" id="page-settings">
+      <div class="st-wrap">
+        <h2 class="sh-title">SETTINGS</h2>
+        <p class="sh-sub">Configure Apex Executor</p>
+
+        <div class="st-group">
+          <div class="st-group-label">GENERAL</div>
+          <div class="st-row">
+            <div class="st-info"><span class="st-name">Light Theme</span><span class="st-desc">Switch to a brighter UI experience</span></div>
+            <label class="tog"><input type="checkbox" id="st-theme"><span class="tog-s"></span></label>
+          </div>
+          <div class="st-row">
+            <div class="st-info"><span class="st-name">Always on Top</span><span class="st-desc">Keep Apex above other windows</span></div>
+            <label class="tog"><input type="checkbox" id="st-topmost"><span class="tog-s"></span></label>
+          </div>
+          <div class="st-row">
+            <div class="st-info"><span class="st-name">Window Opacity</span><span class="st-desc">Adjust window transparency</span></div>
+            <div class="st-slider-wrap">
+              <input type="range" class="st-range" id="st-opacity" min="50" max="100" value="100" />
+              <span class="st-range-val" id="st-opacity-val">100%</span>
+            </div>
+          </div>
+          <div class="st-row">
+            <div class="st-info"><span class="st-name">Auto-check Roblox</span><span class="st-desc">Periodically check if Roblox is running</span></div>
+            <label class="tog"><input type="checkbox" id="st-autocheck" checked><span class="tog-s"></span></label>
+          </div>
+        </div>
+
+        <div class="st-group">
+          <div class="st-group-label">EDITOR</div>
+          <div class="st-row">
+            <div class="st-info"><span class="st-name">Font Size</span><span class="st-desc">Code editor font size</span></div>
+            <select class="st-sel" id="st-fontsize">
+              <option value="11">11px</option><option value="12">12px</option><option value="13" selected>13px</option>
+              <option value="14">14px</option><option value="15">15px</option><option value="16">16px</option><option value="18">18px</option>
+            </select>
+          </div>
+          <div class="st-row">
+            <div class="st-info"><span class="st-name">Word Wrap</span><span class="st-desc">Wrap long lines in editor</span></div>
+            <label class="tog"><input type="checkbox" id="st-wordwrap"><span class="tog-s"></span></label>
+          </div>
+          <div class="st-row">
+            <div class="st-info"><span class="st-name">Minimap</span><span class="st-desc">Show code minimap on the right</span></div>
+            <label class="tog"><input type="checkbox" id="st-minimap" checked><span class="tog-s"></span></label>
+          </div>
+          <div class="st-row">
+            <div class="st-info"><span class="st-name">Line Numbers</span><span class="st-desc">Show line numbers in editor</span></div>
+            <label class="tog"><input type="checkbox" id="st-linenums" checked><span class="tog-s"></span></label>
+          </div>
+        </div>
+
+        <div class="st-group">
+          <div class="st-group-label">ABOUT</div>
+          <div class="st-about">
+            <p><strong>Apex Executor</strong> v2.0 — Native Build</p>
+            <p class="t-dim">Engine: Velocity (QuorumAPI) &bull; Direct Integration</p>
+            <p class="t-dim">Editor: Monaco &bull; Scripts: RScripts API</p>
+            <p class="t-dim">Built with C# + WebView2 &bull; No Bridge Required</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal-bg hidden" id="modal-bg">
+    <div class="modal">
+      <button class="modal-x" id="modal-x"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="modal-img-box"><img id="modal-img" src="" alt=""/></div>
+      <div class="modal-bd">
+        <h3 id="modal-title"></h3>
+        <div class="modal-meta" id="modal-meta"></div>
+        <div class="modal-badges" id="modal-badges"></div>
+        <div class="modal-code"><pre id="modal-code"></pre></div>
+        <div class="modal-btns">
+          <button class="btn-w" id="modal-exec"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5,3 19,12 5,21"/></svg> Execute</button>
+          <button class="btn-g" id="modal-to-editor"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg> Open in Editor</button>
+          <button class="btn-g" id="modal-save"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/></svg> Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVE DIALOG -->
+  <div class="modal-bg hidden" id="save-dialog">
+    <div class="modal save-modal">
+      <h3>Save Script</h3>
+      <input type="text" id="save-name" placeholder="Script name..." spellcheck="false" />
+      <div class="modal-btns">
+        <button class="btn-w" id="save-confirm">Save</button>
+        <button class="btn-g" id="save-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY -->
+  <div class="overlay hidden" id="overlay">
+    <div class="ov-inner"><div class="spin-lg"></div><span class="ov-txt" id="ov-txt">INJECTING...</span></div>
+  </div>
+
+  <!-- WELCOME OVERLAY -->
+  <div class="welcome-overlay hidden" id="welcome-overlay">
+    <div class="welcome-bar">
+      <img class="welcome-avatar" id="welcome-avatar" src="" alt="" />
+      <span class="welcome-text">Welcome back, <strong id="welcome-name">Player</strong></span>
+    </div>
+  </div>
+
+  <!-- CHANGELOG MODAL -->
+  <div class="changelog-overlay hidden" id="changelog-overlay">
+    <div class="changelog-card">
+      <h3>🎉 Updated to <span id="changelog-ver">v1.0.0</span></h3>
+      <p class="changelog-sub">Here's what changed:</p>
+      <ul class="changelog-list" id="changelog-list"></ul>
+      <button class="c-btn-ok" id="changelog-ok">Got it</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>
