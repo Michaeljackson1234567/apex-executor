@@ -20,9 +20,10 @@ C:\Users\Muhammad Bakht\Desktop\New folder (3)\ApexNative\bin\Release\net6.0-win
 C:\Users\Muhammad Bakht\Desktop\New folder (3)\ApexNative\bin\Release\net6.0-windows\runtimes\win-arm64\native\WebView2Loader.dll
 C:\Users\Muhammad Bakht\Desktop\New folder (3)\ApexNative\bin\Release\net6.0-windows\runtimes\win-x86\native\WebView2Loader.dll
 C:\Users\Muhammad Bakht\Desktop\New folder (3)\ApexNative\bin\Release\net6.0-windows\QuorumAPI.dll
-C:\Users\Muhammad Bakht\Desktop\New folder (3)\ApexNative\obj\Release\net6.0-windows\ApexNative.csproj.CopyComplete
 C:\Users\Muhammad Bakht\Desktop\New folder (3)\ApexNative\obj\Release\net6.0-windows\ApexExecutor.dll
 C:\Users\Muhammad Bakht\Desktop\New folder (3)\ApexNative\obj\Release\net6.0-windows\refint\ApexExecutor.dll
 C:\Users\Muhammad Bakht\Desktop\New folder (3)\ApexNative\obj\Release\net6.0-windows\ApexExecutor.pdb
 C:\Users\Muhammad Bakht\Desktop\New folder (3)\ApexNative\obj\Release\net6.0-windows\ApexNative.genruntimeconfig.cache
 C:\Users\Muhammad Bakht\Desktop\New folder (3)\ApexNative\obj\Release\net6.0-windows\ref\ApexExecutor.dll
+C:\Users\Muhammad Bakht\Desktop\New folder (3)\ApexNative\obj\Release\net6.0-windows\ApexNative.sourcelink.json
+C:\Users\Muhammad Bakht\Desktop\New folder (3)\ApexNative\obj\Release\net6.0-windows\ApexNative.csproj.Up2Date

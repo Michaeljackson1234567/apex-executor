@@ -49,15 +49,10 @@ namespace ApexNative
         {
             try
             {
-                Process[] procs = Process.GetProcessesByName("RobloxPlayerBeta");
-                if (procs.Length == 0)
-                    return JObject.FromObject(new { success = false, message = "Roblox is not running! Open Roblox first, then inject." });
-
-                TargetPID = procs[0].Id;
-                await Task.Run(async () => {
-                    await Velocity!.Attach(TargetPID, false);
+                await Task.Run(() => {
+                    Velocity!.AttachAPI();
                 });
-                bool attached = Velocity.IsAttached();
+                bool attached = Velocity!.IsAttached();
 
                 if (attached)
                     return JObject.FromObject(new { success = true, message = "Attached to Roblox successfully!" });
@@ -78,13 +73,7 @@ namespace ApexNative
                 if (string.IsNullOrWhiteSpace(script))
                     return JObject.FromObject(new { success = false, message = "Empty script." });
 
-                if (TargetPID == 0)
-                {
-                    var procs = Process.GetProcessesByName("RobloxPlayerBeta");
-                    if (procs.Length > 0) TargetPID = procs[0].Id;
-                }
-
-                Task.Run(() => Velocity!.Execute(TargetPID, script));
+                Task.Run(() => Velocity!.ExecuteScript(script));
                 return JObject.FromObject(new { success = true, message = "Script executed successfully" });
             }
             catch (Exception ex)
