@@ -18,7 +18,7 @@ namespace ApexNative
     /// </summary>
     public static class ApexEngine
     {
-        private static QuorumModule? Velocity;
+        private static QuorumModule? Quorum;
         private static int TargetPID = 0;
         private static bool _initialized = false;
         private static readonly HttpClient http = new HttpClient();
@@ -31,9 +31,9 @@ namespace ApexNative
         public static void Initialize()
         {
             if (_initialized) return;
-            Velocity = new QuorumModule();
-            QuorumModule._AutoUpdateLogs = false;
-            Velocity.StartCommunication();
+            Quorum = new QuorumModule();
+            QuorumModule._AutoUpdateLogs = true;
+            Quorum.StartCommunication();
             _initialized = true;
 
             SavedScriptsDir = Path.Combine(
@@ -49,10 +49,10 @@ namespace ApexNative
         {
             try
             {
-                await Task.Run(() => {
-                    Velocity!.AttachAPI();
+                await Task.Run(() => {  
+                    Quorum!.AttachAPI();
                 });
-                bool attached = Velocity!.IsAttached();
+                bool attached = Quorum!.IsAttached();
 
                 if (attached)
                     return JObject.FromObject(new { success = true, message = "Attached to Roblox successfully!" });
@@ -73,7 +73,7 @@ namespace ApexNative
                 if (string.IsNullOrWhiteSpace(script))
                     return JObject.FromObject(new { success = false, message = "Empty script." });
 
-                Task.Run(() => Velocity!.ExecuteScript(script));
+                Task.Run(() => Quorum!.ExecuteScript(script));
                 return JObject.FromObject(new { success = true, message = "Script executed successfully" });
             }
             catch (Exception ex)
@@ -345,7 +345,7 @@ namespace ApexNative
 
         public static void Shutdown()
         {
-            try { Velocity?.StopCommunication(); } catch { }
+            try { Quorum?.StopCommunication(); } catch { }
         }
     }
 }

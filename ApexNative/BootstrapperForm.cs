@@ -53,7 +53,7 @@ namespace ApexNative
             await Task.Delay(800);
 
             // Initialize QuorumAPI
-            SendStatus("Starting Velocity engine...");
+            SendStatus("Starting Quorum API...");
             try
             {
                 ApexEngine.Initialize();

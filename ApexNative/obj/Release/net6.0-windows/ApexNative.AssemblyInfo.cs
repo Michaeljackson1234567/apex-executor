@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ApexExecutor")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2dc8638f006c5ff9e6d1edfa701399d6b5c50dd7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+41d56988a046ef607af41a969271c27151294ad0")]
 [assembly: System.Reflection.AssemblyProductAttribute("ApexExecutor")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ApexExecutor")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
